@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Art - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 20% 80%, rgba(0,100,255,0.1) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(255,0,255,0.1) 0%, transparent 50%), #000;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: clamp(2rem, 8vw, 4rem);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #0af, #f0a, #0af);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s linear infinite;
+        }
+        @keyframes glow { to { background-position: 200% center; } }
+        .subtitle { color: #888; margin-bottom: 1rem; }
+        .warning {
+            background: rgba(255,200,0,0.1);
+            border: 1px solid rgba(255,200,0,0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #fc0;
+            margin-bottom: 2rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.2rem;
+            max-width: 900px;
+            width: 100%;
+            padding: 1rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #0af;
+            box-shadow: 0 10px 30px rgba(0,170,255,0.2);
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+        .card p { color: #666; font-size: 0.8rem; }
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: rgba(0,170,255,0.1);
+            border-radius: 10px;
+            font-size: 0.65rem;
+            color: #0af;
+            margin-top: 0.6rem;
+        }
+        .footer { text-align: center; padding: 2rem; color: #444; font-size: 0.8rem; }
+        .footer a { color: #0af; }
+        .back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .back:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back">← Back to Labs</a>
+    <div class="hero">
+        <h1>🎮 3D ART</h1>
+        <p class="subtitle">WebGPU & WebGL 3D Rendering</p>
+        <div class="warning">⚠️ Requires WebGPU-enabled browser (Chrome 113+, Edge 113+)</div>
+        <div class="grid">
+            <a href="webgpu-3d.html" class="card">
+                <h2>⚡ WebGPU Cube</h2>
+                <p>Real WebGPU 3D rendering with lighting.</p>
+                <span class="tag">WEBGPU</span>
+            </a>
+        </div>
+        <div class="footer">
+            <p>Built with JavaScript | <a href="https://github.com/kotgreal-stack">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>

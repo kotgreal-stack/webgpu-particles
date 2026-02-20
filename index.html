@@ -36,37 +36,30 @@
         .subtitle { color: #888; margin-bottom: 3rem; }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.2rem;
-            max-width: 900px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 700px;
             width: 100%;
             padding: 1rem;
         }
         .card {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 1.2rem;
+            border-radius: 16px;
+            padding: 2rem;
             text-decoration: none;
             color: #fff;
             transition: all 0.3s;
+            text-align: center;
         }
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
             border-color: #0ff;
-            box-shadow: 0 10px 30px rgba(0,255,255,0.2);
+            box-shadow: 0 15px 40px rgba(0,255,255,0.25);
         }
-        .card h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
-        .card p { color: #666; font-size: 0.8rem; }
-        .tag {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            background: rgba(0,255,255,0.1);
-            border-radius: 10px;
-            font-size: 0.65rem;
-            color: #0ff;
-            margin-top: 0.6rem;
-        }
+        .card .emoji { font-size: 3rem; display: block; margin-bottom: 1rem; }
+        .card h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .card p { color: #666; font-size: 0.9rem; }
         .footer { text-align: center; padding: 2rem; color: #444; font-size: 0.8rem; }
         .footer a { color: #0ff; }
     </style>
@@ -76,50 +69,15 @@
         <h1>🧪 CYBERCRAFT LABS</h1>
         <p class="subtitle">WebGL Experiments & Interactive Art</p>
         <div class="grid">
-            <a href="warp-tunnel.html" class="card">
-                <h2>🌀 Warp Tunnel</h2>
-                <p>Fly through stars. Click to warp.</p>
-                <span class="tag">INTERACTIVE</span>
+            <a href="2d.html" class="card">
+                <span class="emoji">🎨</span>
+                <h2>2D Art</h2>
+                <p>Canvas visual effects, particles, animations</p>
             </a>
-            <a href="matrix.html" class="card">
-                <h2>💊 Matrix Rain</h2>
-                <p>Falling code effect.</p>
-                <span class="tag">CLASSIC</span>
-            </a>
-            <a href="waves.html" class="card">
-                <h2>🌊 Sound Waves</h2>
-                <p>Flowing sine waves.</p>
-                <span class="tag">HYPNOTIC</span>
-            </a>
-            <a href="particles.html" class="card">
-                <h2>✨ Particle Storm</h2>
-                <p>10K particles in 3D space.</p>
-                <span class="tag">DENSE</span>
-            </a>
-            <a href="galaxy.html" class="card">
-                <h2>🌌 Galaxy Spiral</h2>
-                <p>Swirling galaxy.</p>
-                <span class="tag">RELAXING</span>
-            </a>
-            <a href="fire.html" class="card">
-                <h2>🔥 Plasma Fire</h2>
-                <p>Swirling flames.</p>
-                <span class="tag">WARM</span>
-            </a>
-            <a href="webgpu-3d.html" class="card">
-                <h2>⚡ WebGPU 3D</h2>
-                <p>Real WebGPU rendering - actual 3D!</p>
-                <span class="tag">NEXT GEN</span>
-            </a>
-            <a href="fireworks.html" class="card">
-                <h2>🎆 Fireworks</h2>
-                <p>Click to launch fireworks!</p>
-                <span class="tag">FUN</span>
-            </a>
-            <a href="dvd-bounce.html" class="card">
-                <h2>🖥️ DVD Bounce</h2>
-                <p>The classic bouncing logo.</p>
-                <span class="tag">NOSTALGIA</span>
+            <a href="3d.html" class="card">
+                <span class="emoji">🎮</span>
+                <h2>3D Art</h2>
+                <p>WebGPU & WebGL 3D rendering</p>
             </a>
         </div>
         <div class="footer">

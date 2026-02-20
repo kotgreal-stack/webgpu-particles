@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Art - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 20% 80%, rgba(0,255,255,0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 20%, rgba(255,0,255,0.08) 0%, transparent 50%), #000;
+        }
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: clamp(2rem, 8vw, 4rem);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #0f0, #ff0, #0f0);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s linear infinite;
+        }
+        @keyframes glow { to { background-position: 200% center; } }
+        .subtitle { color: #888; margin-bottom: 3rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.2rem;
+            max-width: 900px;
+            width: 100%;
+            padding: 1rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.2rem;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #0f0;
+            box-shadow: 0 10px 30px rgba(0,255,0,0.2);
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+        .card p { color: #666; font-size: 0.8rem; }
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: rgba(0,255,0,0.1);
+            border-radius: 10px;
+            font-size: 0.65rem;
+            color: #0f0;
+            margin-top: 0.6rem;
+        }
+        .footer { text-align: center; padding: 2rem; color: #444; font-size: 0.8rem; }
+        .footer a { color: #0f0; }
+        .back {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        .back:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back">← Back to Labs</a>
+    <div class="hero">
+        <h1>🎨 2D ART</h1>
+        <p class="subtitle">Canvas 2D Visual Effects</p>
+        <div class="grid">
+            <a href="warp-tunnel.html" class="card">
+                <h2>🌀 Warp Tunnel</h2>
+                <p>Fly through stars. Click to warp.</p>
+                <span class="tag">INTERACTIVE</span>
+            </a>
+            <a href="matrix.html" class="card">
+                <h2>💊 Matrix Rain</h2>
+                <p>Falling code effect.</p>
+                <span class="tag">CLASSIC</span>
+            </a>
+            <a href="waves.html" class="card">
+                <h2>🌊 Sound Waves</h2>
+                <p>Flowing sine waves.</p>
+                <span class="tag">HYPNOTIC</span>
+            </a>
+            <a href="particles.html" class="card">
+                <h2>✨ Particle Storm</h2>
+                <p>10K particles in 3D space.</p>
+                <span class="tag">DENSE</span>
+            </a>
+            <a href="galaxy.html" class="card">
+                <h2>🌌 Galaxy Spiral</h2>
+                <p>Swirling galaxy.</p>
+                <span class="tag">RELAXING</span>
+            </a>
+            <a href="fire.html" class="card">
+                <h2>🔥 Plasma Fire</h2>
+                <p>Swirling flames.</p>
+                <span class="tag">WARM</span>
+            </a>
+            <a href="fireworks.html" class="card">
+                <h2>🎆 Fireworks</h2>
+                <p>Click to launch fireworks!</p>
+                <span class="tag">FUN</span>
+            </a>
+            <a href="dvd-bounce.html" class="card">
+                <h2>🖥️ DVD Bounce</h2>
+                <p>The classic bouncing logo.</p>
+                <span class="tag">NOSTALGIA</span>
+            </a>
+        </div>
+        <div class="footer">
+            <p>Built with JavaScript | <a href="https://github.com/kotgreal-stack">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
