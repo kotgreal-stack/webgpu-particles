@@ -14,52 +14,63 @@
     <canvas id="c"></canvas>
     <script>
         const c = document.getElementById('c');
-        const x = c.getContext('2d');
+        const ctx = c.getContext('2d');
+        
         let W, H;
-        let drops = [];
-        const fontSize = 14;
-        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>^~';
+        let columns = [];
+        const fontSize = 12;
+        const chars = '0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>アイウエオカキクケコサシスセソ';
         
         function resize() {
             W = c.width = window.innerWidth;
             H = c.height = window.innerHeight;
-            const cols = Math.floor(W / fontSize);
-            // Reset drops array to match columns
-            drops = [];
-            for (let i = 0; i < cols; i++) {
-                drops.push(Math.random() * -H); // Start at random positions above screen
+            
+            const numCols = Math.floor(W / fontSize);
+            columns = [];
+            
+            for (let i = 0; i < numCols; i++) {
+                columns.push({
+                    y: Math.random() * H,
+                    speed: 0.5 + Math.random() * 2
+                });
             }
         }
         
         function draw() {
-            // Semi-transparent black for trail effect
-            x.fillStyle = 'rgba(0, 0, 0, 0.08)';
-            x.fillRect(0, 0, W, H);
+            // Clear with semi-transparent black
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, W, H);
             
-            x.font = fontSize + 'px monospace';
+            ctx.font = fontSize + 'px monospace';
             
-            for (let i = 0; i < drops.length; i++) {
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
                 const char = chars[Math.floor(Math.random() * chars.length)];
-                const y = drops[i];
                 
-                // Green gradient based on position
-                const brightness = (y / H) * 255;
-                x.fillStyle = `rgb(0, ${Math.min(255, brightness + 100)}, 0)`;
-                x.fillText(char, i * fontSize, y);
+                // Draw green character
+                const brightness = Math.floor(Math.random() * 155) + 100;
+                ctx.fillStyle = 'rgb(0, ' + brightness + ', 0)';
+                ctx.fillText(char, i * fontSize, col.y);
                 
-                // Move drop down
-                drops[i] += fontSize * 0.8;
+                // Move down
+                col.y += col.speed * fontSize;
                 
-                // Reset to top with random chance
-                if (y > H && Math.random() > 0.975) {
-                    drops[i] = -fontSize;
+                // Reset to top with small random chance
+                if (col.y > H && Math.random() < 0.02) {
+                    col.y = -fontSize;
+                    col.speed = 0.5 + Math.random() * 2;
                 }
             }
         }
         
         resize();
         window.addEventListener('resize', resize);
-        setInterval(draw, 35);
+        
+        function loop() {
+            draw();
+            requestAnimationFrame(loop);
+        }
+        loop();
     </script>
 </body>
 </html>
