@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU Torus - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            z-index: 100;
+        }
+        #info h1 { font-size: 20px; text-shadow: 0 0 20px #f0f; }
+        #info p { font-size: 12px; color: #666; margin-top: 5px; }
+        #error {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f00;
+            font-family: monospace;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>💫 WebGPU Torus</h1>
+        <p>Real WebGPU • Drag to rotate</p>
+    </div>
+    <div id="error" style="display:none">
+        WebGPU not supported in this browser.<br>
+        Try Chrome 113+ or Edge 113+
+    </div>
+    <canvas id="c"></canvas>
+    
+    <script>
+        async function init() {
+            if (!navigator.gpu) {
+                document.getElementById('error').style.display = 'block';
+                return;
+            }
+            
+            const canvas = document.getElementById('c');
+            const adapter = await navigator.gpu.requestAdapter();
+            const device = await adapter.requestDevice();
+            const context = canvas.getContext('webgpu');
+            const format = navigator.gpu.getPreferredCanvasFormat();
+            
+            canvas.width = window.innerWidth * devicePixelRatio;
+            canvas.height = window.innerHeight * devicePixelRatio;
+            
+            context.configure({ device, format, alphaMode: 'premultiplied' });
+            
+            // Shader with specular lighting
+            const shaderCode = `
+                struct Uniforms {
+                    modelViewProjectionMatrix: mat4x4<f32>,
+                    normalMatrix: mat4x4<f32>,
+                    time: f32,
+                }
+                
+                @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+                
+                struct VertexOutput {
+                    @builtin(position) position: vec4<f32>,
+                    @location(0) vNormal: vec3<f32>,
+                    @location(1) vPos: vec3<f32>,
+                }
+                
+                @vertex
+                fn vertexMain(
+                    @location(0) position: vec3<f32>,
+                    @location(1) normal: vec3<f32>
+                ) -> VertexOutput {
+                    var output: VertexOutput;
+                    let mvp = uniforms.modelViewProjectionMatrix;
+                    output.position = mvp * vec4<f32>(position, 1.0);
+                    output.vNormal = (uniforms.normalMatrix * vec4<f32>(normal, 0.0)).xyz;
+                    output.vPos = position;
+                    return output;
+                }
+                
+                @fragment
+                fn fragmentMain(@location(0) vNormal: vec3<f32>, @location(1) vPos: vec3<f32>) -> @location(0) vec4<f32> {
+                    let lightDir = normalize(vec3<f32>(1.0, 1.0, 1.0));
+                    let viewDir = normalize(-vPos);
+                    let normal = normalize(vNormal);
+                    
+                    // Diffuse
+                    let diff = max(dot(normal, lightDir), 0.0);
+                    
+                    // Specular
+                    let reflectDir = reflect(-lightDir, normal);
+                    let spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                    
+                    // Iridescent color based on normal
+                    let irid = vec3<f32>(
+                        0.5 + 0.5 * sin(vNormal.x * 3.0 + uniforms.time),
+                        0.5 + 0.5 * sin(vNormal.y * 3.0 + uniforms.time + 2.094),
+                        0.5 + 0.5 * sin(vNormal.z * 3.0 + uniforms.time + 4.188)
+                    );
+                    
+                    let ambient = 0.15;
+                    let lighting = ambient + diff * 0.6 + spec * 0.5;
+                    
+                    return vec4<f32>(irid * lighting + spec * 0.3, 1.0);
+                }
+            `;
+            
+            const shaderModule = device.createShaderModule({ code: shaderCode });
+            
+            // Create torus geometry
+            function createTorus(R, r, segments, sides) {
+                const positions = [];
+                const normals = [];
+                const indices = [];
+                
+                for (let i = 0; i <= segments; i++) {
+                    const u = (i / segments) * Math.PI * 2;
+                    for (let j = 0; j <= sides; j++) {
+                        const v = (j / sides) * Math.PI * 2;
+                        
+                        const x = (R + r * Math.cos(v)) * Math.cos(u);
+                        const y = r * Math.sin(v);
+                        const z = (R + r * Math.cos(v)) * Math.sin(u);
+                        
+                        positions.push(x, y, z);
+                        
+                        const nx = Math.cos(v) * Math.cos(u);
+                        const ny = Math.sin(v);
+                        const nz = Math.cos(v) * Math.sin(u);
+                        normals.push(nx, ny, nz);
+                    }
+                }
+                
+                for (let i = 0; i < segments; i++) {
+                    for (let j = 0; j < sides; j++) {
+                        const a = i * (sides + 1) + j;
+                        const b = a + sides + 1;
+                        indices.push(a, b, a + 1);
+                        indices.push(b, b + 1, a + 1);
+                    }
+                }
+                
+                return { positions: new Float32Array(positions), normals: new Float32Array(normals), indices: new Uint32Array(indices) };
+            }
+            
+            const torus = createTorus(1.5, 0.5, 48, 24);
+            
+            const positionBuffer = device.createBuffer({
+                size: torus.positions.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(positionBuffer, 0, torus.positions);
+            
+            const normalBuffer = device.createBuffer({
+                size: torus.normals.byteLength,
+                usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(normalBuffer, 0, torus.normals);
+            
+            const indexBuffer = device.createBuffer({
+                size: torus.indices.byteLength,
+                usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(indexBuffer, 0, torus.indices);
+            
+            const uniformBufferSize = 144;
+            const uniformBuffer = device.createBuffer({
+                size: uniformBufferSize,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            });
+            
+            const uniformBindGroupLayout = device.createBindGroupLayout({
+                entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }]
+            });
+            
+            const uniformBindGroup = device.createBindGroup({
+                layout: uniformBindGroupLayout,
+                entries: [{ binding: 0, resource: { buffer: uniformBuffer } }]
+            });
+            
+            const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [uniformBindGroupLayout] });
+            
+            const pipeline = device.createRenderPipeline({
+                layout: pipelineLayout,
+                vertex: {
+                    module: shaderModule,
+                    entryPoint: 'vertexMain',
+                    buffers: [{
+                        arrayStride: 12,
+                        attributes: [{ shaderLocation: 0, offset: 0, format: 'float32x3' }]
+                    }, {
+                        arrayStride: 12,
+                        attributes: [{ shaderLocation: 1, offset: 0, format: 'float32x3' }]
+                    }]
+                },
+                fragment: {
+                    module: shaderModule,
+                    entryPoint: 'fragmentMain',
+                    targets: [{ format }]
+                },
+                primitive: { topology: 'triangle-list', cullMode: 'none' },
+                depthStencil: { depthWriteEnabled: true, depthCompare: 'less', format: 'depth24plus' }
+            });
+            
+            let depthTexture = device.createTexture({
+                size: [canvas.width, canvas.height],
+                format: 'depth24plus',
+                usage: GPUTextureUsage.RENDER_ATTACHMENT
+            });
+            
+            function mat4Perspective(fov, aspect, near, far) {
+                const f = 1.0 / Math.tan(fov / 2);
+                return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)/(near-far),-1, 0,0,(2*far*near)/(near-far),0]);
+            }
+            
+            function mat4Identity() { return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); }
+            
+            function mat4Multiply(a, b) {
+                const r = new Float32Array(16);
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        r[i*4+j] = a[i*4+0]*b[0*4+j] + a[i*4+1]*b[1*4+j] + a[i*4+2]*b[2*4+j] + a[i*4+3]*b[3*4+j];
+                    }
+                }
+                return r;
+            }
+            
+            function mat4RotateX(m, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return mat4Multiply(m, new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]));
+            }
+            
+            function mat4RotateY(m, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return mat4Multiply(m, new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]));
+            }
+            
+            function mat4RotateZ(m, angle) {
+                const c = Math.cos(angle), s = Math.sin(angle);
+                return mat4Multiply(m, new Float32Array([c,s,0,0, -s,c,0,0, 0,0,1,0, 0,0,0,1]));
+            }
+            
+            function mat4Translate(m, x, y, z) {
+                return mat4Multiply(m, new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]));
+            }
+            
+            let rotationX = 0.5, rotationY = 0;
+            let isDragging = false, lastX, lastY;
+            
+            canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+            canvas.addEventListener('mouseup', () => isDragging = false);
+            canvas.addEventListener('mousemove', e => {
+                if (isDragging) {
+                    rotationY += (e.clientX - lastX) * 0.01;
+                    rotationX += (e.clientY - lastY) * 0.01;
+                    lastX = e.clientX; lastY = e.clientY;
+                }
+            });
+            
+            canvas.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; });
+            canvas.addEventListener('touchend', () => isDragging = false);
+            canvas.addEventListener('touchmove', e => {
+                if (isDragging) {
+                    rotationY += (e.touches[0].clientX - lastX) * 0.01;
+                    rotationX += (e.touches[0].clientY - lastY) * 0.01;
+                    lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+                }
+            });
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth * devicePixelRatio;
+                canvas.height = window.innerHeight * devicePixelRatio;
+                depthTexture.destroy();
+                depthTexture = device.createTexture({ size: [canvas.width, canvas.height], format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+                context.configure({ device, format, alphaMode: 'premultiplied' });
+            });
+            
+            let time = 0;
+            
+            function frame() {
+                time += 0.016;
+                
+                const aspect = canvas.width / canvas.height;
+                const proj = mat4Perspective(Math.PI / 3, aspect, 0.1, 100);
+                
+                let model = mat4Identity();
+                model = mat4Translate(model, 0, 0, -5);
+                model = mat4RotateX(model, rotationX);
+                model = mat4RotateY(model, rotationY + time * 0.5);
+                model = mat4RotateZ(model, time * 0.2);
+                
+                const mvp = mat4Multiply(proj, model);
+                
+                const uniformData = new Float32Array(36);
+                uniformData.set(mvp, 0);
+                uniformData.set(model, 16);
+                uniformData[32] = time;
+                
+                device.queue.writeBuffer(uniformBuffer, 0, uniformData);
+                
+                const commandEncoder = device.createCommandEncoder();
+                const textureView = context.getCurrentTexture().createView();
+                
+                const renderPass = commandEncoder.beginRenderPass({
+                    colorAttachments: [{
+                        view: textureView,
+                        clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                        loadOp: 'clear',
+                        storeOp: 'store'
+                    }],
+                    depthStencilAttachment: {
+                        view: depthTexture.createView(),
+                        depthClearValue: 1.0,
+                        depthLoadOp: 'clear',
+                        depthStoreOp: 'store'
+                    }
+                });
+                
+                renderPass.setPipeline(pipeline);
+                renderPass.setBindGroup(0, uniformBindGroup);
+                renderPass.setVertexBuffer(0, positionBuffer);
+                renderPass.setVertexBuffer(1, normalBuffer);
+                renderPass.setIndexBuffer(indexBuffer, 'uint32');
+                renderPass.drawIndexed(torus.indices.length);
+                renderPass.end();
+                
+                device.queue.submit([commandEncoder.finish()]);
+                requestAnimationFrame(frame);
+            }
+            
+            frame();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

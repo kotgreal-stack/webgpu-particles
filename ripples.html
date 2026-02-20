@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripples - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        const ripples = [];
+        
+        class Ripple {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 0;
+                this.maxRadius = Math.min(W, H) * 0.4;
+                this.speed = 5;
+                this.alive = true;
+                this.hue = Math.random() * 60 + 180;
+            }
+            update() {
+                this.radius += this.speed;
+                if (this.radius > this.maxRadius) this.alive = false;
+            }
+            draw() {
+                const progress = this.radius / this.maxRadius;
+                const alpha = 1 - progress;
+                
+                x.beginPath();
+                x.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                x.strokeStyle = `hsla(${this.hue}, 100%, 60%, ${alpha})`;
+                x.lineWidth = 3 * (1 - progress);
+                x.stroke();
+                
+                // Inner ring
+                x.beginPath();
+                x.arc(this.x, this.y, this.radius * 0.7, 0, Math.PI * 2);
+                x.strokeStyle = `hsla(${this.hue + 30}, 100%, 70%, ${alpha * 0.5})`;
+                x.lineWidth = 2 * (1 - progress);
+                x.stroke();
+            }
+        }
+        
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            
+            c.addEventListener('click', e => {
+                ripples.push(new Ripple(e.clientX, e.clientY));
+            });
+            
+            c.addEventListener('touchstart', e => {
+                for (let t of e.touches) {
+                    ripples.push(new Ripple(t.clientX, t.clientY));
+                }
+            });
+            
+            animate();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            
+            // Auto ripples
+            if (Math.random() < 0.03) {
+                ripples.push(new Ripple(
+                    Math.random() * W,
+                    Math.random() * H
+                ));
+            }
+            
+            for (let i = ripples.length - 1; i >= 0; i--) {
+                ripples[i].update();
+                ripples[i].draw();
+                if (!ripples[i].alive) ripples.splice(i, 1);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

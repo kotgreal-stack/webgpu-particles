@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroids - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        canvas { display: block; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        
+        const W = 800, H = 600;
+        c.width = W;
+        c.height = H;
+        
+        let ship = { x: W/2, y: H/2, angle: -Math.PI/2, vel: 0, rot: 0 };
+        let asteroids = [];
+        let bullets = [];
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+        let level = 1;
+        
+        const keys = {};
+        
+        document.addEventListener('keydown', e => keys[e.code] = true);
+        document.addEventListener('keyup', e => keys[e.code] = false);
+        
+        function createAsteroid() {
+            const edge = Math.floor(Math.random() * 4);
+            let a = {
+                x: 0, y: 0,
+                vx: (Math.random() - 0.5) * (2 + level * 0.5),
+                vy: (Math.random() - 0.5) * (2 + level * 0.5),
+                size: 30 + Math.random() * 20,
+                verts: [],
+                angle: 0,
+                rotSpeed: (Math.random() - 0.5) * 0.1
+            };
+            
+            if (edge === 0) { a.x = Math.random() * W; a.y = -50; }
+            else if (edge === 1) { a.x = W + 50; a.y = Math.random() * H; }
+            else if (edge === 2) { a.x = Math.random() * W; a.y = H + 50; }
+            else { a.x = -50; a.y = Math.random() * H; }
+            
+            // Random polygon shape
+            const points = 8 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < points; i++) {
+                a.verts.push(0.7 + Math.random() * 0.6);
+            }
+            
+            return a;
+        }
+        
+        function initLevel() {
+            asteroids = [];
+            for (let i = 0; i < 4 + level * 2; i++) {
+                asteroids.push(createAsteroid());
+            }
+        }
+        
+        function shoot() {
+            bullets.push({
+                x: ship.x + Math.cos(ship.angle) * 20,
+                y: ship.y + Math.sin(ship.angle) * 20,
+                vx: Math.cos(ship.angle) * 10,
+                vy: Math.sin(ship.angle) * 10,
+                life: 60
+            });
+        }
+        
+        function update() {
+            if (gameOver) return;
+            
+            // Ship
+            if (keys['ArrowLeft'] || keys['KeyA']) ship.rot = -0.08;
+            else if (keys['ArrowRight'] || keys['KeyD']) ship.rot = 0.08;
+            else ship.rot = 0;
+            
+            ship.angle += ship.rot;
+            
+            if (keys['ArrowUp'] || keys['KeyW']) {
+                ship.vel = Math.min(ship.vel + 0.2, 6);
+            } else {
+                ship.vel *= 0.98;
+            }
+            
+            ship.x += Math.cos(ship.angle) * ship.vel;
+            ship.y += Math.sin(ship.angle) * ship.vel;
+            
+            if (ship.x < 0) ship.x = W;
+            if (ship.x > W) ship.x = 0;
+            if (ship.y < 0) ship.y = H;
+            if (ship.y > H) ship.y = 0;
+            
+            // Shooting
+            if (keys['Space'] && !keys.lastSpace) {
+                shoot();
+                keys.lastSpace = true;
+            }
+            if (!keys['Space']) keys.lastSpace = false;
+            
+            // Bullets
+            bullets = bullets.filter(b => b.life > 0);
+            for (let b of bullets) {
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+                if (b.x < 0) b.x = W;
+                if (b.x > W) b.x = 0;
+                if (b.y < 0) b.y = H;
+                if (b.y > H) b.y = 0;
+            }
+            
+            // Asteroids
+            for (let a of asteroids) {
+                a.x += a.vx;
+                a.y += a.vy;
+                a.angle += a.rotSpeed;
+                
+                if (a.x < -60) a.x = W + 50;
+                if (a.x > W + 60) a.x = -50;
+                if (a.y < -60) a.y = H + 50;
+                if (a.y > H + 60) a.y = -50;
+                
+                // Ship collision
+                const dx = a.x - ship.x;
+                const dy = a.y - ship.y;
+                if (Math.sqrt(dx*dx + dy*dy) < a.size) {
+                    lives--;
+                    ship.x = W/2;
+                    ship.y = H/2;
+                    ship.vel = 0;
+                    if (lives <= 0) gameOver = true;
+                }
+            }
+            
+            // Bullet-asteroid collision
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                for (let j = asteroids.length - 1; j >= 0; j--) {
+                    const b = bullets[i];
+                    const a = asteroids[j];
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < a.size) {
+                        bullets.splice(i, 1);
+                        asteroids.splice(j, 1);
+                        score += 100;
+                        break;
+                    }
+                }
+            }
+            
+            if (asteroids.length === 0) {
+                level++;
+                initLevel();
+            }
+        }
+        
+        function draw() {
+            x.fillStyle = '#000';
+            x.fillRect(0, 0, W, H);
+            
+            // Stars
+            x.fillStyle = '#fff';
+            for (let i = 0; i < 50; i++) {
+                const sx = (i * 137) % W;
+                const sy = (i * 243) % H;
+                x.fillRect(sx, sy, 1, 1);
+            }
+            
+            // Asteroids
+            for (let a of asteroids) {
+                x.save();
+                x.translate(a.x, a.y);
+                x.rotate(a.angle);
+                x.beginPath();
+                const step = Math.PI * 2 / a.verts.length;
+                for (let i = 0; i < a.verts.length; i++) {
+                    const r = a.size * a.verts[i];
+                    const angle = i * step;
+                    if (i === 0) x.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+                    else x.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+                }
+                x.closePath();
+                x.strokeStyle = '#888';
+                x.lineWidth = 2;
+                x.stroke();
+                x.restore();
+            }
+            
+            // Bullets
+            x.fillStyle = '#ff0';
+            for (let b of bullets) {
+                x.beginPath();
+                x.arc(b.x, b.y, 3, 0, Math.PI * 2);
+                x.fill();
+            }
+            
+            // Ship
+            if (!gameOver || lives > 0) {
+                x.save();
+                x.translate(ship.x, ship.y);
+                x.rotate(ship.angle);
+                x.beginPath();
+                x.moveTo(20, 0);
+                x.lineTo(-15, -10);
+                x.lineTo(-10, 0);
+                x.lineTo(-15, 10);
+                x.closePath();
+                x.fillStyle = '#0ff';
+                x.shadowBlur = 15;
+                x.shadowColor = '#0ff';
+                x.fill();
+                x.restore();
+            }
+            
+            // UI
+            x.shadowBlur = 0;
+            x.fillStyle = '#fff';
+            x.font = '20px monospace';
+            x.textAlign = 'left';
+            x.fillText('Score: ' + score, 20, 30);
+            x.fillText('Level: ' + level, 20, 55);
+            x.textAlign = 'right';
+            x.fillText('Lives: ' + '♥'.repeat(lives), W - 20, 30);
+            
+            if (gameOver) {
+                x.fillStyle = 'rgba(0,0,0,0.7)';
+                x.fillRect(0, 0, W, H);
+                x.fillStyle = '#f00';
+                x.font = 'bold 40px monospace';
+                x.textAlign = 'center';
+                x.fillText('GAME OVER', W/2, H/2);
+                x.fillStyle = '#fff';
+                x.font = '20px monospace';
+                x.fillText('Press R to restart', W/2, H/2 + 40);
+            }
+        }
+        
+        document.addEventListener('keydown', e => {
+            if (e.code === 'KeyR' && gameOver) {
+                score = 0;
+                lives = 3;
+                level = 1;
+                gameOver = false;
+                ship.x = W/2;
+                ship.y = H/2;
+                ship.vel = 0;
+                initLevel();
+            }
+        });
+        
+        initLevel();
+        setInterval(() => { update(); draw(); }, 1000/60);
+    </script>
+</body>
+</html>
