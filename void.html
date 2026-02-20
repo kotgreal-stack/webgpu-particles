@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID - CyberCraft Labs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Orbitron', monospace;
+            touch-action: none;
+        }
+        
+        #game {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+        
+        #ui {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: clamp(24px, 5vw, 48px);
+            font-weight: 700;
+            text-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+            opacity: 0.9;
+        }
+        
+        #start, #gameover {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #fff;
+            pointer-events: auto;
+        }
+        
+        #start h1, #gameover h1 {
+            font-size: clamp(40px, 10vw, 80px);
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #0ff, #f0f, #0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 2s linear infinite;
+        }
+        
+        @keyframes glow {
+            to { background-position: 200% center; }
+        }
+        
+        #start p, #gameover p {
+            font-size: clamp(14px, 3vw, 24px);
+            color: #888;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            background: transparent;
+            border: 2px solid #0ff;
+            color: #0ff;
+            padding: 15px 40px;
+            font-size: clamp(16px, 3vw, 24px);
+            font-family: 'Orbitron', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .btn:hover {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 30px #0ff;
+        }
+        
+        #highscore {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #f0f;
+            font-size: clamp(12px, 2vw, 18px);
+            opacity: 0.7;
+        }
+        
+        #gameover { display: none; }
+        
+        #tutorial {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #444;
+            font-size: 14px;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    
+    <div id="ui">
+        <div id="score">0</div>
+        <div id="highscore">BEST: 0</div>
+        
+        <div id="start">
+            <h1>VOID</h1>
+            <p>Survive the void. Tap or click to move.</p>
+            <button class="btn" onclick="startGame()">START</button>
+            <div id="tutorial">TAP TO CHANGE DIRECTION</div>
+        </div>
+        
+        <div id="gameover">
+            <h1>GAME OVER</h1>
+            <p id="finalScore">Score: 0</p>
+            <button class="btn" onclick="startGame()">RETRY</button>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        let W, H;
+        let gameRunning = false;
+        let score = 0;
+        let highScore = localStorage.getItem('void-highscore') || 0;
+        
+        // Player
+        let player = {
+            x: 0, y: 0,
+            radius: 15,
+            vx: 0, vy: 0,
+            speed: 8,
+            dir: 0, // 0=right, 1=down, 2=left, 3=up
+            trail: []
+        };
+        
+        // Obstacles
+        let obstacles = [];
+        let particles = [];
+        let stars = [];
+        
+        // Game state
+        let difficulty = 1;
+        let frameCount = 0;
+        
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+            player.x = W / 2;
+            player.y = H / 2;
+            
+            // Generate background stars
+            stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    size: Math.random() * 2 + 0.5,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+        
+        function startGame() {
+            document.getElementById('start').style.display = 'none';
+            document.getElementById('gameover').style.display = 'none';
+            document.getElementById('tutorial').style.opacity = '0';
+            
+            player.x = W / 2;
+            player.y = H / 2;
+            player.vx = player.speed;
+            player.vy = 0;
+            player.dir = 0;
+            player.trail = [];
+            
+            obstacles = [];
+            particles = [];
+            score = 0;
+            difficulty = 1;
+            frameCount = 0;
+            
+            document.getElementById('score').textContent = '0';
+            document.getElementById('highscore').textContent = 'BEST: ' + highScore;
+            
+            gameRunning = true;
+            loop();
+        }
+        
+        function changeDirection() {
+            if (!gameRunning) return;
+            
+            player.dir = (player.dir + 1) % 4;
+            
+            switch(player.dir) {
+                case 0: player.vx = player.speed; player.vy = 0; break;
+                case 1: player.vx = 0; player.vy = player.speed; break;
+                case 2: player.vx = -player.speed; player.vy = 0; break;
+                case 3: player.vx = 0; player.vy = -player.speed; break;
+            }
+            
+            // Burst effect
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: player.x,
+                    y: player.y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1,
+                    color: '#0ff'
+                });
+            }
+        }
+        
+        function spawnObstacle() {
+            const side = Math.floor(Math.random() * 4);
+            let obs = {
+                x: 0, y: 0,
+                size: 20 + Math.random() * 30,
+                vx: 0, vy: 0,
+                speed: 3 + difficulty * 0.5,
+                type: Math.random() > 0.5 ? 'square' : 'circle'
+            };
+            
+            switch(side) {
+                case 0: // left
+                    obs.x = -obs.size;
+                    obs.y = Math.random() * H;
+                    obs.vx = obs.speed;
+                    obs.vy = (Math.random() - 0.5) * 2;
+                    break;
+                case 1: // right
+                    obs.x = W + obs.size;
+                    obs.y = Math.random() * H;
+                    obs.vx = -obs.speed;
+                    obs.vy = (Math.random() - 0.5) * 2;
+                    break;
+                case 2: // top
+                    obs.x = Math.random() * W;
+                    obs.y = -obs.size;
+                    obs.vx = (Math.random() - 0.5) * 2;
+                    obs.vy = obs.speed;
+                    break;
+                case 3: // bottom
+                    obs.x = Math.random() * W;
+                    obs.y = H + obs.size;
+                    obs.vx = (Math.random() - 0.5) * 2;
+                    obs.vy = -obs.speed;
+                    break;
+            }
+            
+            obstacles.push(obs);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('void-highscore', highScore);
+            }
+            
+            document.getElementById('finalScore').textContent = 'Score: ' + score;
+            document.getElementById('gameover').style.display = 'block';
+            
+            // Death explosion
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: player.x,
+                    y: player.y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    life: 1,
+                    color: '#f0f'
+                });
+            }
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            frameCount++;
+            score = Math.floor(frameCount / 10);
+            document.getElementById('score').textContent = score;
+            
+            // Increase difficulty
+            difficulty = 1 + Math.floor(score / 100) * 0.5;
+            
+            // Move player
+            player.x += player.vx;
+            player.y += player.vy;
+            
+            // Wall bounce
+            if (player.x < player.radius) { player.x = player.radius; player.vx *= -1; }
+            if (player.x > W - player.radius) { player.x = W - player.radius; player.vx *= -1; }
+            if (player.y < player.radius) { player.y = player.radius; player.vy *= -1; }
+            if (player.y > H - player.radius) { player.y = H - player.radius; player.vy *= -1; }
+            
+            // Trail
+            player.trail.push({x: player.x, y: player.y, life: 1});
+            if (player.trail.length > 15) player.trail.shift();
+            for (let t of player.trail) t.life -= 0.07;
+            
+            // Spawn obstacles
+            const spawnRate = Math.max(20, 60 - difficulty * 5);
+            if (frameCount % Math.floor(spawnRate) === 0) {
+                spawnObstacle();
+            }
+            
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x += obs.vx;
+                obs.y += obs.vy;
+                
+                // Remove if off screen
+                if (obs.x < -100 || obs.x > W + 100 || obs.y < -100 || obs.y > H + 100) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+                
+                // Collision
+                const dx = player.x - obs.x;
+                const dy = player.y - obs.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < player.radius + obs.size * 0.6) {
+                    gameOver();
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+        
+        function draw() {
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            
+            // Stars
+            for (let s of stars) {
+                ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(0,255,255,0.05)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            for (let x = 0; x < W; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            }
+            for (let y = 0; y < H; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            }
+            
+            // Player trail
+            for (let t of player.trail) {
+                if (t.life <= 0) continue;
+                ctx.fillStyle = `rgba(0,255,255,${t.life * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, player.radius * t.life * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Player
+            if (gameRunning) {
+                // Glow
+                const gradient = ctx.createRadialGradient(player.x, player.y, 0, player.x, player.y, player.radius * 2);
+                gradient.addColorStop(0, 'rgba(0,255,255,0.8)');
+                gradient.addColorStop(0.5, 'rgba(0,255,255,0.2)');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius * 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#0ff';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Direction indicator
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                const angle = player.dir * Math.PI / 2;
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(player.x + Math.cos(angle) * player.radius, player.y + Math.sin(angle) * player.radius);
+                ctx.stroke();
+            }
+            
+            // Obstacles
+            for (let obs of obstacles) {
+                ctx.save();
+                ctx.translate(obs.x, obs.y);
+                
+                // Glow
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#f06';
+                ctx.fillStyle = '#f06';
+                
+                if (obs.type === 'square') {
+                    ctx.fillRect(-obs.size/2, -obs.size/2, obs.size, obs.size);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obs.size/2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            
+            // Particles
+            for (let p of particles) {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function loop() {
+            update();
+            draw();
+            if (gameRunning || particles.length > 0) {
+                requestAnimationFrame(loop);
+            }
+        }
+        
+        // Input
+        canvas.addEventListener('click', changeDirection);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (gameRunning) changeDirection();
+                else if (document.getElementById('start').style.display !== 'none') startGame();
+                else if (document.getElementById('gameover').style.display !== 'none') startGame();
+            }
+        });
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Initial draw
+        document.getElementById('highscore').textContent = 'BEST: ' + highScore;
+        draw();
+    </script>
+</body>
+</html>
