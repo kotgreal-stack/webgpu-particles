@@ -6,71 +6,76 @@
     <title>Matrix Rain - CyberCraft Labs</title>
     <style>
         * { margin: 0; padding: 0; }
-        body { background: #000; overflow: hidden; }
-        canvas { display: block; }
+        html, body { 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: #000;
+        }
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%;
+        }
     </style>
 </head>
 <body>
     <canvas id="c"></canvas>
     <script>
-        const c = document.getElementById('c');
-        const ctx = c.getContext('2d');
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
         
-        let W, H;
+        let width, height;
+        const fontSize = 14;
+        const chars = '0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+        
         let columns = [];
-        const fontSize = 12;
-        const chars = '0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>アイウエオカキクケコサシスセソ';
         
         function resize() {
-            W = c.width = window.innerWidth;
-            H = c.height = window.innerHeight;
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
             
-            const numCols = Math.floor(W / fontSize);
+            const numColumns = Math.ceil(width / fontSize);
             columns = [];
-            
-            for (let i = 0; i < numCols; i++) {
-                columns.push({
-                    y: Math.random() * H,
-                    speed: 0.5 + Math.random() * 2
-                });
+            for (let i = 0; i < numColumns; i++) {
+                columns[i] = Math.random() * -height;
             }
         }
         
         function draw() {
-            // Clear with semi-transparent black
+            // Semi-transparent fade
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-            ctx.fillRect(0, 0, W, H);
+            ctx.fillRect(0, 0, width, height);
             
             ctx.font = fontSize + 'px monospace';
             
             for (let i = 0; i < columns.length; i++) {
-                const col = columns[i];
-                const char = chars[Math.floor(Math.random() * chars.length)];
+                const char = chars.charAt(Math.floor(Math.random() * chars.length));
+                const y = columns[i];
                 
-                // Draw green character
-                const brightness = Math.floor(Math.random() * 155) + 100;
-                ctx.fillStyle = 'rgb(0, ' + brightness + ', 0)';
-                ctx.fillText(char, i * fontSize, col.y);
+                // Green color
+                const green = Math.floor(Math.random() * 155) + 100;
+                ctx.fillStyle = 'rgb(0, ' + green + ', 0)';
+                
+                ctx.fillText(char, i * fontSize, y);
                 
                 // Move down
-                col.y += col.speed * fontSize;
+                columns[i] += fontSize * 0.8;
                 
-                // Reset to top with small random chance
-                if (col.y > H && Math.random() < 0.02) {
-                    col.y = -fontSize;
-                    col.speed = 0.5 + Math.random() * 2;
+                // Reset when off screen
+                if (columns[i] > height && Math.random() > 0.975) {
+                    columns[i] = -fontSize;
                 }
             }
+            
+            requestAnimationFrame(draw);
         }
         
         resize();
         window.addEventListener('resize', resize);
-        
-        function loop() {
-            draw();
-            requestAnimationFrame(loop);
-        }
-        loop();
+        draw();
     </script>
 </body>
 </html>
