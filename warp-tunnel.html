@@ -3,203 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberCraft Labs</title>
+    <title>Warp Tunnel - CyberCraft Labs</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            background: #000;
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
             color: #fff;
             font-family: 'Courier New', monospace;
-            min-height: 100vh;
-            overflow-x: hidden;
+            z-index: 100;
+            pointer-events: none;
         }
-        
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: 
-                radial-gradient(ellipse at 20% 80%, rgba(0,255,255,0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(255,0,255,0.1) 0%, transparent 50%),
-                #000;
-        }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 30-30 30-30-30z' fill='%23000' fill-opacity='0.4'/%3E%3C/svg%3E");
-            opacity: 0.3;
-        }
-        
-        h1 {
-            font-size: clamp(2rem, 8vw, 5rem);
-            text-align: center;
-            margin-bottom: 1rem;
-            background: linear-gradient(90deg, #0ff, #f0f, #0ff);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: glow 3s linear infinite;
-            text-shadow: 0 0 30px rgba(0,255,255,0.5);
-        }
-        
-        @keyframes glow {
-            to { background-position: 200% center; }
-        }
-        
-        .subtitle {
-            font-size: 1.2rem;
-            color: #888;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            max-width: 1200px;
-            padding: 2rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .card {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 2rem;
-            text-decoration: none;
-            color: #fff;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: 0.5s;
-        }
-        
-        .card:hover::before {
-            left: 100%;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: #0ff;
-            box-shadow: 0 10px 40px rgba(0,255,255,0.2);
-        }
-        
-        .card h2 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .card p {
-            color: #888;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        
-        .card .tag {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: rgba(0,255,255,0.1);
-            border-radius: 20px;
-            font-size: 0.75rem;
-            color: #0ff;
-            margin-top: 1rem;
-        }
-        
-        .footer {
-            text-align: center;
-            padding: 3rem;
-            color: #444;
-            font-size: 0.8rem;
-        }
-        
-        .footer a {
-            color: #0ff;
-            text-decoration: none;
-        }
-        
-        .badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: #f0f;
-            color: #000;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        
-        .interactive .badge {
-            background: #0f0;
-        }
+        #title { font-size: 24px; font-weight: bold; text-shadow: 0 0 20px #0ff; }
+        #hint { font-size: 12px; color: #666; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>🧪 CYBERCRAFT LABS</h1>
-        <p class="subtitle">WebGL Experiments & Interactive Art</p>
-        
-        <div class="grid">
-            <a href="warp-tunnel.html" class="card interactive">
-                <span class="badge">INTERACTIVE</span>
-                <h2>🌀 Warp Tunnel</h2>
-                <p>Fly through a 3D star field. Click to engage warp speed. Move mouse to shift perspective.</p>
-                <span class="tag">Click to Warp</span>
-            </a>
-            
-            <a href="matrix.html" class="card">
-                <h2>� Matrix Rain</h2>
-                <p>The iconic falling code effect. Green characters raining down like digital rain.</p>
-                <span class="tag">Classic</span>
-            </a>
-            
-            <a href="waves.html" class="card">
-                <h2>🌊 Sound Waves</h2>
-                <p>Visualize sound with this trippy waveform. Organic flowing patterns respond to you.</p>
-                <span class="tag">Audio Reactive</span>
-            </a>
-            
-            <a href="particles.html" class="card">
-                <h2>✨ Particle Storm</h2>
-                <p>10,000 particles flowing in 3D space with wave motion and color cycling.</p>
-                <span class="tag">Hypnotic</span>
-            </a>
-            
-            <a href="galaxy.html" class="card">
-                <h2>🌌 Galaxy Spiral</h2>
-                <p>A swirling spiral galaxy with gravitational simulation. Stars orbit the center.</p>
-                <span class="tag">Relaxing</span>
-            </a>
-            
-            <a href="fire.html" class="card">
-                <h2>🔥 Plasma Fire</h2>
-                <p>Hot plasma simulation with swirling flames. Colors shift from red to yellow to white.</p>
-                <span class="tag">Warm</span>
-            </a>
-        </div>
-        
-        <div class="footer">
-            <p>Built with JavaScript + Canvas | <a href="https://github.com/kotgreal-stack">GitHub</a></p>
-        </div>
+    <div id="info">
+        <div id="title">🌀 WARP TUNNEL</div>
+        <div id="hint">Click to warp • Move mouse to steer</div>
     </div>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let stars = [];
+        const num = 1500;
+        
+        const colors = ['#00ffff', '#ff00ff', '#00ff88', '#ff0066', '#6600ff'];
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class Star {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = (Math.random() - 0.5) * W * 3;
+                this.y = (Math.random() - 0.5) * H * 3;
+                this.z = Math.random() * 400 + 20;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.trail = [];
+            }
+            update(speed) {
+                this.z -= speed;
+                if (this.z < 1) this.reset();
+                this.trail.push({x: this.x, y: this.y, z: this.z});
+                if (this.trail.length > 12) this.trail.shift();
+            }
+            draw() {
+                const scale = 400 / this.z;
+                const sx = this.x * scale + W / 2;
+                const sy = this.y * scale + H / 2;
+                const size = Math.max(0.5, (400 - this.z) / 80);
+                
+                if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) return;
+                
+                // Trail
+                x.beginPath();
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const ts = 400 / t.z;
+                    const tx = t.x * ts + W / 2;
+                    const ty = t.y * ts + H / 2;
+                    if (i === 0) x.moveTo(tx, ty);
+                    else x.lineTo(tx, ty);
+                }
+                x.strokeStyle = this.color;
+                x.globalAlpha = 0.2;
+                x.lineWidth = size;
+                x.stroke();
+                
+                // Star
+                x.beginPath();
+                x.arc(sx, sy, size, 0, Math.PI * 2);
+                x.fillStyle = this.color;
+                x.globalAlpha = Math.min(1, (400 - this.z) / 150);
+                x.fill();
+                
+                // Glow
+                x.beginPath();
+                x.arc(sx, sy, size * 2, 0, Math.PI * 2);
+                const g = x.createRadialGradient(sx, sy, 0, sx, sy, size * 2);
+                g.addColorStop(0, this.color);
+                g.addColorStop(1, 'transparent');
+                x.fillStyle = g;
+                x.globalAlpha = 0.4;
+                x.fill();
+            }
+        }
+        
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            for (let i = 0; i < num; i++) stars.push(new Star());
+            animate();
+        }
+        
+        let speed = 6;
+        let targetSpeed = 6;
+        
+        window.addEventListener('click', () => {
+            targetSpeed = targetSpeed === 6 ? 20 : 6;
+        });
+        
+        window.addEventListener('touchstart', () => {
+            targetSpeed = targetSpeed === 6 ? 20 : 6;
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            const mx = (e.clientX - W/2) / W;
+            const my = (e.clientY - H/2) / H;
+            for (let s of stars) {
+                s.x += mx * 3;
+                s.y += my * 3;
+            }
+        });
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            x.fillRect(0, 0, W, H);
+            
+            speed += (targetSpeed - speed) * 0.05;
+            
+            for (let s of stars) {
+                s.update(speed);
+                s.draw();
+            }
+            
+            x.globalAlpha = 1;
+        }
+        
+        init();
+    </script>
 </body>
 </html>
