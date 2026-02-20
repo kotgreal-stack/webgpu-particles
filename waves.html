@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Waves - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let time = 0;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        function draw() {
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            
+            const centerY = H / 2;
+            const waves = 5;
+            const colors = ['#0ff', '#f0f', '#0f0', '#ff0', '#f00'];
+            
+            for (let w = 0; w < waves; w++) {
+                x.beginPath();
+                x.strokeStyle = colors[w];
+                x.lineWidth = 2;
+                
+                for (let i = 0; i < W; i += 3) {
+                    const freq = 0.01 + w * 0.005;
+                    const amp = 50 + w * 20;
+                    const speed = time * (2 + w * 0.5);
+                    const y = centerY + 
+                        Math.sin(i * freq + speed) * amp +
+                        Math.sin(i * freq * 2 + speed * 1.5) * (amp * 0.5) +
+                        Math.sin(i * freq * 0.5 + speed * 0.7) * (amp * 0.3);
+                    
+                    if (i === 0) x.moveTo(i, y);
+                    else x.lineTo(i, y);
+                }
+                
+                x.globalAlpha = 0.7 - w * 0.1;
+                x.stroke();
+            }
+            
+            x.globalAlpha = 1;
+            time += 0.02;
+            requestAnimationFrame(draw);
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plasma Fire - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let time = 0;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        function draw() {
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            
+            const centerX = W / 2;
+            const centerY = H / 2;
+            
+            for (let y = 0; y < H; y += 4) {
+                for (let xPos = 0; xPos < W; xPos += 4) {
+                    const dx = xPos - centerX;
+                    const dy = y - centerY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    const v = Math.sin(dist * 0.03 - time) + 
+                              Math.sin(xPos * 0.02 + time * 2) + 
+                              Math.sin(y * 0.02 + time * 1.5) +
+                              Math.sin((xPos + y) * 0.01 + time);
+                    
+                    const normalized = (v + 4) / 8;
+                    
+                    // Fire colors: red -> orange -> yellow -> white
+                    let r, g, b;
+                    if (normalized < 0.25) {
+                        r = normalized * 4 * 255;
+                        g = 0;
+                        b = 0;
+                    } else if (normalized < 0.5) {
+                        r = 255;
+                        g = (normalized - 0.25) * 4 * 200;
+                        b = 0;
+                    } else if (normalized < 0.75) {
+                        r = 255;
+                        g = 200 + (normalized - 0.5) * 4 * 55;
+                        b = (normalized - 0.5) * 4 * 100;
+                    } else {
+                        r = 255;
+                        g = 255;
+                        b = 100 + (normalized - 0.75) * 4 * 155;
+                    }
+                    
+                    x.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    x.globalAlpha = Math.min(1, normalized + 0.2);
+                    x.fillRect(xPos, y, 4, 4);
+                }
+            }
+            
+            x.globalAlpha = 1;
+            time += 0.02;
+            requestAnimationFrame(draw);
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>

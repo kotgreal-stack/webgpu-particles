@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Storm - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let particles = [];
+        const num = 10000;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * H;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.size = Math.random() * 3 + 1;
+                this.hue = Math.random() * 60 + 180; // cyan to magenta
+            }
+            update(time) {
+                this.x += this.vx + Math.sin(time + this.y * 0.01) * 0.5;
+                this.y += this.vy + Math.cos(time + this.x * 0.01) * 0.5;
+                this.hue += 0.5;
+                if (this.hue > 360) this.hue = 0;
+                if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+            }
+            draw() {
+                x.beginPath();
+                x.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                x.fillStyle = `hsl(${this.hue}, 100%, 60%)`;
+                x.fill();
+            }
+        }
+        
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            for (let i = 0; i < num; i++) particles.push(new Particle());
+            animate();
+        }
+        
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            x.fillRect(0, 0, W, H);
+            x.globalCompositeOperation = 'lighter';
+            time += 0.01;
+            for (let p of particles) {
+                p.update(time);
+                p.draw();
+            }
+            x.globalCompositeOperation = 'source-over';
+        }
+        
+        init();
+    </script>
+</body>
+</html>

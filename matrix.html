@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Rain - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let columns = [];
+        const fontSize = 16;
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF$+-*/=%"\'#&_.,;:!?\\|()[]{}<>^~';
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+            columns = Math.floor(W / fontSize);
+        }
+        
+        const yPositions = new Array(columns).fill(0);
+        
+        function draw() {
+            x.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            x.fillRect(0, 0, W, H);
+            
+            x.font = fontSize + 'px monospace';
+            
+            for (let i = 0; i < yPositions.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                const y = yPositions[i] * fontSize;
+                
+                // Green gradient
+                const g = Math.floor(255 * (yPositions[i] / (H / fontSize)));
+                x.fillStyle = `rgb(0, ${g}, 0)`;
+                x.fillText(char, i * fontSize, y);
+                
+                if (y > H && Math.random() > 0.975) {
+                    yPositions[i] = 0;
+                }
+                yPositions[i]++;
+            }
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        setInterval(draw, 33);
+    </script>
+</body>
+</html>
