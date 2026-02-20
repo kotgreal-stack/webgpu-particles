@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGPU 3D Cube - CyberCraft Labs</title>
+    <title>3D Cube - CyberCraft Labs</title>
     <style>
         * { margin: 0; padding: 0; }
         body { background: #000; overflow: hidden; }
@@ -18,13 +18,22 @@
         }
         #info h1 { font-size: 20px; }
         #info p { font-size: 12px; color: #888; margin-top: 5px; }
+        #error {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #f66;
+            font-family: monospace;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div id="info">
-        <h1>🎮 3D Cube</h1>
-        <p>Drag to rotate • WebGL fallback</p>
+        <h1>🎲 3D Cube</h1>
+        <p>Drag to rotate • WebGL</p>
     </div>
+    <div id="error" style="display:none"></div>
     <canvas id="c"></canvas>
     
     <script>
@@ -32,7 +41,8 @@
         const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
         
         if (!gl) {
-            document.getElementById('info').innerHTML = '<h1 style="color:red">WebGL not supported</h1><p>Try a different browser</p>';
+            document.getElementById('error').innerHTML = 'WebGL not supported<br>Try a different browser';
+            document.getElementById('error').style.display = 'block';
             throw new Error('No WebGL');
         }
         
@@ -52,19 +62,26 @@
             }
         `;
         
+        // Fixed fragment shader with proper rainbow colors
         const fsSource = `
             precision mediump float;
             varying vec3 vNormal;
             uniform float uTime;
+            
+            vec3 hsv2rgb(vec3 c) {
+                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+            }
+            
             void main() {
                 vec3 light = normalize(vec3(1.0, 1.0, 1.0));
-                float diff = max(dot(normalize(vNormal), light), 0.2);
-                float hue = vNormal.x + vNormal.y + vNormal.z + uTime * 0.5;
-                vec3 color = vec3(
-                    abs(hue * 2.0 - 1.0),
-                    2.0 - abs(hue * 2.0 - 2.0),
-                    2.0 - abs(hue * 2.0 - 3.0)
-                );
+                float diff = max(dot(normalize(vNormal), light), 0.3);
+                
+                // Rainbow hue based on normal + time
+                float hue = fract((vNormal.x + vNormal.y + vNormal.z) * 0.25 + uTime * 0.15);
+                vec3 color = hsv2rgb(vec3(hue, 1.0, 1.0));
+                
                 gl_FragColor = vec4(color * diff, 1.0);
             }
         `;
@@ -73,6 +90,9 @@
             const shader = gl.createShader(type);
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader error:', gl.getShaderInfoLog(shader));
+            }
             return shader;
         }
         
@@ -82,9 +102,14 @@
         gl.attachShader(program, vs);
         gl.attachShader(program, fs);
         gl.linkProgram(program);
+        
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Program link error:', gl.getProgramInfoLog(program));
+        }
+        
         gl.useProgram(program);
         
-        // Cube
+        // Cube vertices
         const positions = new Float32Array([
             -1,-1,1, 1,-1,1, 1,1,1, -1,1,1,
             -1,-1,-1, -1,1,-1, 1,1,-1, 1,-1,-1,
@@ -156,7 +181,7 @@
         });
         
         function perspective(fov, aspect, near, far) {
-            const f = 1 / Math.tan(fov / 2);
+            const f = 1.0 / Math.tan(fov / 2);
             return new Float32Array([
                 f/aspect, 0, 0, 0,
                 0, f, 0, 0,
@@ -164,8 +189,6 @@
                 0, 0, (2*far*near)/(near-far), 0
             ]);
         }
-        
-        function identity() { return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); }
         
         function multiply(a, b) {
             const r = new Float32Array(16);
@@ -216,6 +239,13 @@
         }
         
         frame();
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+        });
     </script>
 </body>
 </html>

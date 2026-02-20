@@ -41,14 +41,25 @@
     
     <script>
         async function init() {
+            const errorDiv = document.getElementById('error');
+            
             if (!navigator.gpu) {
-                document.getElementById('error').style.display = 'block';
+                errorDiv.innerHTML = 'WebGPU not supported.<br><br>Requirements:<br>• Chrome 113+ or Edge 113+<br>• Enable #enable-webgpu-developer-mode in flags<br>• Restart browser after enabling';
+                errorDiv.style.display = 'block';
                 return;
             }
             
             const canvas = document.getElementById('c');
-            const adapter = await navigator.gpu.requestAdapter();
-            const device = await adapter.requestDevice();
+            
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) {
+                    errorDiv.innerHTML = 'WebGPU adapter not found.<br><br>Try enabling:<br>chrome://flags/#enable-webgpu-developer-mode';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                
+                const device = await adapter.requestDevice();
             const context = canvas.getContext('webgpu');
             const format = navigator.gpu.getPreferredCanvasFormat();
             
@@ -337,6 +348,10 @@
             }
             
             frame();
+        } catch (e) {
+            errorDiv.innerHTML = 'WebGPU Error: ' + e.message + '<br><br>Try restarting browser with flags enabled.';
+            errorDiv.style.display = 'block';
+            console.error('WebGPU error:', e);
         }
         
         init();

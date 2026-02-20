@@ -26,9 +26,10 @@
         const ctx = canvas.getContext('2d');
         
         let width, height;
-        const fontSize = 14;
+        const fontSize = 16;
         const chars = '0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
         
+        // Each column has a head position and trailing characters
         let columns = [];
         
         function resize() {
@@ -40,33 +41,69 @@
             const numColumns = Math.ceil(width / fontSize);
             columns = [];
             for (let i = 0; i < numColumns; i++) {
-                columns[i] = Math.random() * -height;
+                columns[i] = {
+                    y: Math.random() * -height * 2,
+                    speed: 0.5 + Math.random() * 1.5,
+                    chars: []
+                };
             }
         }
         
         function draw() {
-            // Semi-transparent fade
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            // Dark fade for trail effect - lower = longer trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.025)';
             ctx.fillRect(0, 0, width, height);
             
             ctx.font = fontSize + 'px monospace';
             
             for (let i = 0; i < columns.length; i++) {
+                const col = columns[i];
+                
+                // Add new character at head
                 const char = chars.charAt(Math.floor(Math.random() * chars.length));
-                const y = columns[i];
+                col.chars.unshift({ char, alpha: 1 });
                 
-                // Green color
-                const green = Math.floor(Math.random() * 155) + 100;
-                ctx.fillStyle = 'rgb(0, ' + green + ', 0)';
+                // Draw all characters in the trail
+                for (let j = 0; j < col.chars.length; j++) {
+                    const c = col.chars[j];
+                    const y = col.y - (j * fontSize);
+                    
+                    if (y < 0) continue; // Skip if above screen
+                    
+                    // Fade based on position in trail
+                    c.alpha = Math.max(0, 1 - (j / 15));
+                    
+                    // Bright green for head, darker for trail
+                    const green = j === 0 ? 255 : Math.floor(100 + (155 * c.alpha));
+                    ctx.fillStyle = `rgb(0, ${green}, 0)`;
+                    
+                    // Make head slightly brighter
+                    if (j === 0) {
+                        ctx.fillStyle = '#0f0';
+                        ctx.fillText(c.char, i * fontSize, y);
+                    } else {
+                        ctx.fillText(c.char, i * fontSize, y);
+                    }
+                }
                 
-                ctx.fillText(char, i * fontSize, y);
+                // Limit trail length
+                if (col.chars.length > 20) {
+                    col.chars.pop();
+                }
                 
                 // Move down
-                columns[i] += fontSize * 0.8;
+                col.y += col.speed * fontSize * 0.15;
                 
-                // Reset when off screen
-                if (columns[i] > height && Math.random() > 0.975) {
-                    columns[i] = -fontSize;
+                // Reset column when it goes off screen
+                if (col.y - (col.chars.length * fontSize) > height) {
+                    col.y = -fontSize;
+                    col.chars = [];
+                }
+                
+                // Random reset for variety
+                if (col.y > height + 100 && Math.random() > 0.98) {
+                    col.y = -fontSize;
+                    col.chars = [];
                 }
             }
             
