@@ -16,43 +16,50 @@
         const c = document.getElementById('c');
         const x = c.getContext('2d');
         let W, H;
-        let columns = [];
-        const fontSize = 16;
-        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF$+-*/=%"\'#&_.,;:!?\\|()[]{}<>^~';
+        let drops = [];
+        const fontSize = 14;
+        const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF$+-*/="%#&_.,;:!?|()[]{}<>^~';
         
         function resize() {
             W = c.width = window.innerWidth;
             H = c.height = window.innerHeight;
-            columns = Math.floor(W / fontSize);
+            const cols = Math.floor(W / fontSize);
+            // Reset drops array to match columns
+            drops = [];
+            for (let i = 0; i < cols; i++) {
+                drops.push(Math.random() * -H); // Start at random positions above screen
+            }
         }
         
-        const yPositions = new Array(columns).fill(0);
-        
         function draw() {
-            x.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            // Semi-transparent black for trail effect
+            x.fillStyle = 'rgba(0, 0, 0, 0.08)';
             x.fillRect(0, 0, W, H);
             
             x.font = fontSize + 'px monospace';
             
-            for (let i = 0; i < yPositions.length; i++) {
+            for (let i = 0; i < drops.length; i++) {
                 const char = chars[Math.floor(Math.random() * chars.length)];
-                const y = yPositions[i] * fontSize;
+                const y = drops[i];
                 
-                // Green gradient
-                const g = Math.floor(255 * (yPositions[i] / (H / fontSize)));
-                x.fillStyle = `rgb(0, ${g}, 0)`;
+                // Green gradient based on position
+                const brightness = (y / H) * 255;
+                x.fillStyle = `rgb(0, ${Math.min(255, brightness + 100)}, 0)`;
                 x.fillText(char, i * fontSize, y);
                 
+                // Move drop down
+                drops[i] += fontSize * 0.8;
+                
+                // Reset to top with random chance
                 if (y > H && Math.random() > 0.975) {
-                    yPositions[i] = 0;
+                    drops[i] = -fontSize;
                 }
-                yPositions[i]++;
             }
         }
         
         resize();
         window.addEventListener('resize', resize);
-        setInterval(draw, 33);
+        setInterval(draw, 35);
     </script>
 </body>
 </html>

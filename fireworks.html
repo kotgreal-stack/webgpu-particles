@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fireworks - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let fireworks = [];
+        let particles = [];
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class Firework {
+            constructor(tx, ty) {
+                this.x = W / 2;
+                this.y = H;
+                this.tx = tx;
+                this.ty = ty;
+                this.dist = Math.sqrt((tx - W/2) ** 2 + (ty - H) ** 2);
+                this.speed = 15;
+                this.dead = false;
+            }
+            update() {
+                const angle = Math.atan2(this.ty - this.y, this.tx - this.x);
+                this.x += Math.cos(angle) * this.speed;
+                this.y += Math.sin(angle) * this.speed;
+                this.speed *= 0.98;
+                if (this.speed < 1 || Math.abs(this.x - this.tx) < 10 && Math.abs(this.y - this.ty) < 10) {
+                    this.explode();
+                    this.dead = true;
+                }
+            }
+            explode() {
+                const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f', '#fff'];
+                for (let i = 0; i < 80; i++) {
+                    particles.push(new Particle(this.tx, this.ty, colors[Math.floor(Math.random() * colors.length)]));
+                }
+            }
+            draw() {
+                x.beginPath();
+                x.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                x.fillStyle = '#fff';
+                x.fill();
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 2;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.1; // gravity
+                this.life -= this.decay;
+            }
+            draw() {
+                x.beginPath();
+                x.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                x.fillStyle = this.color;
+                x.globalAlpha = this.life;
+                x.fill();
+                x.globalAlpha = 1;
+            }
+        }
+        
+        function launch() {
+            const tx = Math.random() * W * 0.8 + W * 0.1;
+            const ty = Math.random() * H * 0.5 + H * 0.1;
+            fireworks.push(new Firework(tx, ty));
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            x.fillRect(0, 0, W, H);
+            
+            // Auto launch fireworks
+            if (Math.random() < 0.05) launch();
+            
+            // Update fireworks
+            fireworks = fireworks.filter(f => !f.dead);
+            for (let f of fireworks) {
+                f.update();
+                f.draw();
+            }
+            
+            // Update particles
+            particles = particles.filter(p => p.life > 0);
+            for (let p of particles) {
+                p.update();
+                p.draw();
+            }
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        window.addEventListener('click', launch);
+        window.addEventListener('touchstart', launch);
+        animate();
+    </script>
+</body>
+</html>

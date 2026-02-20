@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVD Bounce - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">🖥️ DVD BOUNCE<br><span style="color:#666;font-size:12px">Click to add more</span></div>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let logos = [];
+        
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#00ffff', '#ff00ff', '#ffffff'];
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class DVDLogo {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.w = 120;
+                this.h = 60;
+                this.x = Math.random() * (W - this.w);
+                this.y = Math.random() * (H - this.h);
+                this.vx = (Math.random() + 0.5) * 4;
+                this.vy = (Math.random() + 0.5) * 4;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.hue = Math.random() * 360;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x <= 0 || this.x + this.w >= W) {
+                    this.vx *= -1;
+                    this.x = Math.max(0, Math.min(this.x, W - this.w));
+                    this.changeColor();
+                }
+                if (this.y <= 0 || this.y + this.h >= H) {
+                    this.vy *= -1;
+                    this.y = Math.max(0, Math.min(this.y, H - this.h));
+                    this.changeColor();
+                }
+            }
+            changeColor() {
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            draw() {
+                // Glow
+                x.shadowBlur = 20;
+                x.shadowColor = this.color;
+                
+                // DVD text
+                x.font = 'bold 24px Arial';
+                x.fillStyle = this.color;
+                x.fillText('DVD', this.x + 35, this.y + 38);
+                
+                // Logo shape
+                x.strokeStyle = this.color;
+                x.lineWidth = 2;
+                x.strokeRect(this.x, this.y, this.w, this.h);
+                
+                x.shadowBlur = 0;
+            }
+        }
+        
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            window.addEventListener('click', () => logos.push(new DVDLogo()));
+            logos.push(new DVDLogo());
+            animate();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            
+            for (let l of logos) {
+                l.update();
+                l.draw();
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>
