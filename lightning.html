@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightning - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let bolts = [];
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class Bolt {
+            constructor() {
+                this.segments = [];
+                this.life = 1;
+                this.x = Math.random() * W * 0.8 + W * 0.1;
+                this.y = 0;
+                this.generate();
+            }
+            generate() {
+                let cx = this.x, cy = this.y;
+                while (cy < H) {
+                    const nx = cx + (Math.random() - 0.5) * 80;
+                    const ny = cy + Math.random() * 30 + 10;
+                    this.segments.push({ x1: cx, y1: cy, x2: nx, y2: ny });
+                    cx = nx;
+                    cy = ny;
+                }
+            }
+            update() {
+                this.life -= 0.03;
+            }
+            draw() {
+                x.lineWidth = 3;
+                x.lineCap = 'round';
+                
+                // Glow
+                x.shadowBlur = 20;
+                x.shadowColor = '#aaf';
+                x.strokeStyle = `rgba(200, 220, 255, ${this.life})`;
+                x.beginPath();
+                for (let s of this.segments) {
+                    x.moveTo(s.x1, s.y1);
+                    x.lineTo(s.x2, s.y2);
+                }
+                x.stroke();
+                
+                // Core
+                x.shadowBlur = 0;
+                x.lineWidth = 1;
+                x.strokeStyle = `rgba(255, 255, 255, ${this.life})`;
+                x.beginPath();
+                for (let s of this.segments) {
+                    x.moveTo(s.x1, s.y1);
+                    x.lineTo(s.x2, s.y2);
+                }
+                x.stroke();
+            }
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        function strike() {
+            bolts.push(new Bolt());
+        }
+        
+        strike();
+        
+        setInterval(() => {
+            if (Math.random() < 0.3) strike();
+        }, 2000);
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            x.fillRect(0, 0, W, H);
+            
+            bolts = bolts.filter(b => b.life > 0);
+            for (let b of bolts) {
+                b.update();
+                b.draw();
+            }
+        }
+        animate();
+    </script>
+</body>
+</html>

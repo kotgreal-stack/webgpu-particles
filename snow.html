@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        let flakes = [];
+        const num = 500;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        class Flake {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * -H;
+                this.size = Math.random() * 4 + 1;
+                this.speed = Math.random() * 2 + 1;
+                this.wind = (Math.random() - 0.5) * 0.5;
+                this.opacity = Math.random() * 0.5 + 0.5;
+            }
+            update() {
+                this.y += this.speed;
+                this.x += this.wind + Math.sin(this.y * 0.01) * 0.5;
+                if (this.y > H) this.reset();
+                if (this.x < 0) this.x = W;
+                if (this.x > W) this.x = 0;
+            }
+            draw() {
+                x.beginPath();
+                x.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                x.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                x.fill();
+            }
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        for (let i = 0; i < num; i++) flakes.push(new Flake());
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            for (let f of flakes) { f.update(); f.draw(); }
+        }
+        animate();
+    </script>
+</body>
+</html>

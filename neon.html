@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Text - CyberCraft Labs</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="c"></canvas>
+    <script>
+        const c = document.getElementById('c');
+        const x = c.getContext('2d');
+        let W, H;
+        
+        const text = 'CYBERCRAFT';
+        let time = 0;
+        
+        function resize() {
+            W = c.width = window.innerWidth;
+            H = c.height = window.innerHeight;
+        }
+        
+        function drawGlow(text, x, y, size, color, intensity) {
+            x.font = `bold ${size}px 'Courier New', monospace`;
+            x.textAlign = 'center';
+            x.textBaseline = 'middle';
+            
+            // Multiple glow layers
+            for (let i = intensity; i > 0; i--) {
+                x.shadowBlur = i * 3;
+                x.shadowColor = color;
+                x.fillStyle = color;
+                x.globalAlpha = 0.1;
+                x.fillText(text, x, y);
+            }
+            
+            // Core text
+            x.shadowBlur = 20;
+            x.shadowColor = color;
+            x.fillStyle = '#fff';
+            x.globalAlpha = 1;
+            x.fillText(text, x, y);
+            
+            x.shadowBlur = 0;
+        }
+        
+        function draw() {
+            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            x.fillRect(0, 0, W, H);
+            
+            const colors = ['#f0f', '#0ff', '#0f0', '#ff0', '#f00'];
+            const size = Math.min(W, H) * 0.15;
+            
+            for (let i = 0; i < colors.length; i++) {
+                const offset = (time * 50 + i * 80) % W;
+                const y = H / 2 + Math.sin(time * 2 + i) * 50;
+                const alpha = 0.5 + Math.sin(time * 3 + i) * 0.3;
+                
+                x.globalAlpha = alpha;
+                drawGlow(text, W - offset, y, size, colors[i], 10);
+                
+                // Mirror
+                x.globalAlpha = alpha * 0.5;
+                drawGlow(text, offset, H - y, size * 0.5, colors[i], 5);
+            }
+            
+            x.globalAlpha = 1;
+            time += 0.02;
+            requestAnimationFrame(draw);
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>
