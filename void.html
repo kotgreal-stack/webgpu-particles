@@ -144,6 +144,15 @@
         .powerup-icon.slow { background: #0ff; color: #000; }
         .powerup-icon.shield { background: #0f0; color: #000; }
         .powerup-icon.magnet { background: #f0f; color: #000; }
+        
+        .controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #444;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -164,10 +173,12 @@
             <h1>🕳️ VOID</h1>
             <p>
                 <strong>HOW TO PLAY</strong><br><br>
-                Tap, click, or press SPACE to change direction.<br><br>
+                <strong>🎮 CONTROLS:</strong><br>
+                • TAP / CLICK / SPACEBAR - Change direction<br>
+                • ARROW KEYS - Also work!<br><br>
                 <strong>🎯 GOAL:</strong> Survive as long as possible<br>
                 <strong>💀 AVOID:</strong> Red shapes coming at you<br>
-                <strong>⭐ LEVELS:</strong> Every 200 points<br><br>
+                <strong>⭐ LEVELS:</strong> Every 300 points<br><br>
                 <strong>POWERUPS:</strong><br>
                 🛡️ Shield - protects from one hit<br>
                 ⏱️ Slow - slows down obstacles<br>
@@ -178,7 +189,7 @@
         
         <div id="start">
             <h1>🕳️ VOID</h1>
-            <p>Survive the void. Tap to change direction.</p>
+            <p>Survive the void.</p>
             <button class="btn" onclick="startGame()">START</button>
             <br><br>
             <button class="btn" onclick="showInstructions()" style="border-color: #ff0; color: #ff0;">HOW TO PLAY</button>
@@ -190,6 +201,8 @@
             <p id="finalLevel">Level: 1</p>
             <button class="btn" onclick="startGame()">RETRY</button>
         </div>
+        
+        <div class="controls-hint">TAP / CLICK / SPACE / ARROWS TO PLAY</div>
     </div>
     
     <script>
@@ -202,12 +215,13 @@
         let level = 1;
         let highScore = localStorage.getItem('void-highscore') || 0;
         
-        // Player
+        // Player - START SLOW
         let player = {
             x: 0, y: 0,
             radius: 15,
             vx: 0, vy: 0,
-            speed: 5,
+            baseSpeed: 3,  // SLOW START
+            speed: 3,
             dir: 0,
             trail: [],
             hasShield: false,
@@ -259,6 +273,8 @@
             
             player.x = W / 2;
             player.y = H / 2;
+            player.baseSpeed = 3;  // ALWAYS START AT 3
+            player.speed = 3;
             player.vx = player.speed;
             player.vy = 0;
             player.dir = 0;
@@ -322,9 +338,9 @@
             const side = Math.floor(Math.random() * 4);
             let obs = {
                 x: 0, y: 0,
-                size: 15 + Math.random() * 20,
+                size: 15 + Math.random() * 15,  // Smaller obstacles
                 vx: 0, vy: 0,
-                speed: (2 + level * 0.3),
+                speed: 1.5 + level * 0.2,  // SLOW increase
                 type: Math.floor(Math.random() * 3)
             };
             
@@ -335,24 +351,24 @@
                     obs.x = -padding;
                     obs.y = Math.random() * H;
                     obs.vx = obs.speed;
-                    obs.vy = (Math.random() - 0.5) * (1 + level * 0.1);
+                    obs.vy = (Math.random() - 0.5) * 0.5;
                     break;
                 case 1:
                     obs.x = W + padding;
                     obs.y = Math.random() * H;
                     obs.vx = -obs.speed;
-                    obs.vy = (Math.random() - 0.5) * (1 + level * 0.1);
+                    obs.vy = (Math.random() - 0.5) * 0.5;
                     break;
                 case 2:
                     obs.x = Math.random() * W;
                     obs.y = -padding;
-                    obs.vx = (Math.random() - 0.5) * (1 + level * 0.1);
+                    obs.vx = (Math.random() - 0.5) * 0.5;
                     obs.vy = obs.speed;
                     break;
                 case 3:
                     obs.x = Math.random() * W;
                     obs.y = H + padding;
-                    obs.vx = (Math.random() - 0.5) * (1 + level * 0.1);
+                    obs.vx = (Math.random() - 0.5) * 0.5;
                     obs.vy = -obs.speed;
                     break;
             }
@@ -408,14 +424,27 @@
             if (!gameRunning) return;
             
             frameCount++;
-            score = Math.floor(frameCount / 15);
+            score = Math.floor(frameCount / 20);  // Slower scoring
             document.getElementById('score').textContent = score;
             
-            // Level up every 200 points
-            const newLevel = Math.floor(score / 200) + 1;
+            // Level up every 300 points (was 200)
+            const newLevel = Math.floor(score / 300) + 1;
             if (newLevel > level) {
                 level = newLevel;
                 document.getElementById('level').textContent = 'LEVEL ' + level;
+                
+                // Increase speed slightly with level
+                player.baseSpeed = 3 + (level - 1) * 0.3;
+                player.speed = player.baseSpeed;
+                
+                // Update current velocity to new speed
+                const speed = player.hasSlow ? player.speed * 0.5 : player.speed;
+                switch(player.dir) {
+                    case 0: player.vx = speed; player.vy = 0; break;
+                    case 1: player.vx = 0; player.vy = speed; break;
+                    case 2: player.vx = -speed; player.vy = 0; break;
+                    case 3: player.vx = 0; player.vy = -speed; break;
+                }
                 
                 // Level up burst
                 for (let i = 0; i < 20; i++) {
@@ -464,12 +493,12 @@
             if (player.trail.length > 12) player.trail.shift();
             for (let t of player.trail) t.life -= 0.08;
             
-            // Spawn obstacles
-            const spawnRate = Math.max(25, 50 - level * 3);
+            // Spawn obstacles - SLOWER spawn rate
+            const spawnRate = Math.max(35, 60 - level * 2);
             if (frameCount % spawnRate === 0) spawnObstacle();
             
-            // Spawn powerups randomly
-            if (frameCount % 500 === 0 && powerups.length < 3) spawnPowerup();
+            // Spawn powerups
+            if (frameCount % 600 === 0 && powerups.length < 3) spawnPowerup();
             
             // Update obstacles
             for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -492,7 +521,6 @@
                         player.shieldTimer = 0;
                         obstacles.splice(i, 1);
                         
-                        // Shield break effect
                         for (let j = 0; j < 15; j++) {
                             particles.push({
                                 x: player.x,
@@ -514,7 +542,6 @@
                 let p = powerups[i];
                 p.bob += 0.1;
                 
-                // Magnet effect
                 if (player.hasMagnet) {
                     const dx = p.x - player.x;
                     const dy = p.y - player.y;
@@ -530,7 +557,6 @@
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
                 if (dist < player.radius + p.size) {
-                    // Collect powerup
                     if (p.type === 'shield') { player.hasShield = true; player.shieldTimer = 600; }
                     else if (p.type === 'slow') { player.hasSlow = true; player.slowTimer = 300; }
                     else if (p.type === 'magnet') { player.hasMagnet = true; }
@@ -703,7 +729,7 @@
             }
         }
         
-        // Input
+        // Input - Multiple ways to play
         canvas.addEventListener('click', changeDirection);
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -717,6 +743,13 @@
                 else if (document.getElementById('start').style.display !== 'none') startGame();
                 else if (document.getElementById('gameover').style.display !== 'none') startGame();
                 else if (document.getElementById('instructions').style.display !== 'none') showStart();
+            }
+            
+            // Arrow keys also work
+            if (!gameRunning) return;
+            if (e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                changeDirection();
             }
         });
         
