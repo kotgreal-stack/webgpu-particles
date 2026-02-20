@@ -14,7 +14,7 @@
     <canvas id="c"></canvas>
     <script>
         const c = document.getElementById('c');
-        const x = c.getContext('2d');
+        const ctx = c.getContext('2d');
         let W, H;
         
         const text = 'CYBERCRAFT';
@@ -25,33 +25,31 @@
             H = c.height = window.innerHeight;
         }
         
-        function drawGlow(text, x, y, size, color, intensity) {
-            x.font = `bold ${size}px 'Courier New', monospace`;
-            x.textAlign = 'center';
-            x.textBaseline = 'middle';
+        function drawGlow(txt, cx, cy, size, color, intensity) {
+            ctx.font = `bold ${size}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             
-            // Multiple glow layers
             for (let i = intensity; i > 0; i--) {
-                x.shadowBlur = i * 3;
-                x.shadowColor = color;
-                x.fillStyle = color;
-                x.globalAlpha = 0.1;
-                x.fillText(text, x, y);
+                ctx.shadowBlur = i * 3;
+                ctx.shadowColor = color;
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.1;
+                ctx.fillText(txt, cx, cy);
             }
             
-            // Core text
-            x.shadowBlur = 20;
-            x.shadowColor = color;
-            x.fillStyle = '#fff';
-            x.globalAlpha = 1;
-            x.fillText(text, x, y);
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = color;
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 1;
+            ctx.fillText(txt, cx, cy);
             
-            x.shadowBlur = 0;
+            ctx.shadowBlur = 0;
         }
         
         function draw() {
-            x.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            x.fillRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, W, H);
             
             const colors = ['#f0f', '#0ff', '#0f0', '#ff0', '#f00'];
             const size = Math.min(W, H) * 0.15;
@@ -61,15 +59,14 @@
                 const y = H / 2 + Math.sin(time * 2 + i) * 50;
                 const alpha = 0.5 + Math.sin(time * 3 + i) * 0.3;
                 
-                x.globalAlpha = alpha;
+                ctx.globalAlpha = alpha;
                 drawGlow(text, W - offset, y, size, colors[i], 10);
                 
-                // Mirror
-                x.globalAlpha = alpha * 0.5;
+                ctx.globalAlpha = alpha * 0.5;
                 drawGlow(text, offset, H - y, size * 0.5, colors[i], 5);
             }
             
-            x.globalAlpha = 1;
+            ctx.globalAlpha = 1;
             time += 0.02;
             requestAnimationFrame(draw);
         }

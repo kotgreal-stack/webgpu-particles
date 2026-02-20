@@ -6,8 +6,19 @@
     <title>Pong - CyberCraft Labs</title>
     <style>
         * { margin: 0; padding: 0; }
-        body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        canvas { display: block; border: 2px solid #333; }
+        body { 
+            background: #000; 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh;
+        }
+        canvas { 
+            display: block; 
+            border: 2px solid #333;
+            cursor: none;
+        }
     </style>
 </head>
 <body>
@@ -16,14 +27,25 @@
         const c = document.getElementById('c');
         const x = c.getContext('2d');
         
-        const W = 800, H = 500;
-        c.width = W;
-        c.height = H;
+        let W = 800, H = 500;
+        
+        function resize() {
+            const maxW = window.innerWidth - 40;
+            const maxH = window.innerHeight - 40;
+            if (maxW / maxH < W / H) {
+                c.width = Math.min(800, maxW);
+                c.height = c.width * H / W;
+            } else {
+                c.height = Math.min(500, maxH);
+                c.width = c.height * W / H;
+            }
+        }
+        
+        let scale = 1;
         
         let p1 = { x: 20, y: H/2 - 50, w: 15, h: 100, score: 0 };
         let p2 = { x: W - 35, y: H/2 - 50, w: 15, h: 100, score: 0 };
         let ball = { x: W/2, y: H/2, vx: 5, vy: 3, size: 10 };
-        let aiSpeed = 4;
         
         function resetBall() {
             ball.x = W/2;
@@ -33,14 +55,11 @@
         }
         
         function update() {
-            // Ball movement
             ball.x += ball.vx;
             ball.y += ball.vy;
             
-            // Wall collision
             if (ball.y < 0 || ball.y > H) ball.vy *= -1;
             
-            // Paddle collision
             if (ball.x < p1.x + p1.w && ball.y > p1.y && ball.y < p1.y + p1.h) {
                 ball.vx = Math.abs(ball.vx) * 1.1;
                 ball.vy += (ball.y - (p1.y + p1.h/2)) * 0.1;
@@ -50,22 +69,27 @@
                 ball.vy += (ball.y - (p2.y + p2.h/2)) * 0.1;
             }
             
-            // Score
             if (ball.x < 0) { p2.score++; resetBall(); }
             if (ball.x > W) { p1.score++; resetBall(); }
             
-            // AI for player 2
+            // Simple AI for paddle 2
             let targetY = ball.y - p2.h/2;
+            let aiSpeed = 4;
             if (p2.y < targetY) p2.y += aiSpeed;
             if (p2.y > targetY) p2.y -= aiSpeed;
         }
         
         function draw() {
-            // Background
+            // Scale for display
+            const displayW = c.width;
+            const displayH = c.height;
+            scale = displayW / W;
+            
+            x.scale(scale, scale);
+            
             x.fillStyle = '#000';
             x.fillRect(0, 0, W, H);
             
-            // Center line
             x.strokeStyle = '#333';
             x.setLineDash([10, 10]);
             x.beginPath();
@@ -74,20 +98,17 @@
             x.stroke();
             x.setLineDash([]);
             
-            // Paddles
             x.fillStyle = '#0f0';
             x.shadowBlur = 15;
             x.shadowColor = '#0f0';
             x.fillRect(p1.x, p1.y, p1.w, p1.h);
             x.fillRect(p2.x, p2.y, p2.w, p2.h);
             
-            // Ball
             x.beginPath();
             x.arc(ball.x, ball.y, ball.size, 0, Math.PI*2);
             x.fillStyle = '#fff';
             x.fill();
             
-            // Score
             x.shadowBlur = 0;
             x.font = 'bold 48px monospace';
             x.fillStyle = '#0f0';
@@ -95,27 +116,29 @@
             x.fillText(p1.score, W/4, 60);
             x.fillText(p2.score, W*3/4, 60);
             
-            // Instructions
             if (p1.score === 0 && p2.score === 0) {
                 x.font = '16px monospace';
                 x.fillStyle = '#666';
-                x.fillText('Move mouse to control paddle', W/2, H - 30);
+                x.fillText('Move mouse to control', W/2, H - 30);
             }
         }
         
         c.addEventListener('mousemove', (e) => {
             const rect = c.getBoundingClientRect();
-            const my = e.clientY - rect.top;
+            const my = (e.clientY - rect.top) / scale;
             p1.y = Math.max(0, Math.min(H - p1.h, my - p1.h/2));
         });
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        resetBall();
         
         function loop() {
             update();
             draw();
             requestAnimationFrame(loop);
         }
-        
-        resetBall();
         loop();
     </script>
 </body>
